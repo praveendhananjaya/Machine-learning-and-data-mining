@@ -1,0 +1,159 @@
+import numpy as np
+import matplotlib.pylab as plt
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
+
+class Simple_linear_regression:
+    def __init__(self, arry_x, arry_y):
+        self.X = np.array(arry_x)
+        self.Y = np.array(arry_y)
+        self.b0 = 0
+        self.b1 = 1
+
+    def Least_square(self):
+        n = np.size(self.X)
+
+        mean_X = np.mean(self.X)  # determining  the mean of data ste
+        mean_Y = np.mean(self.Y)
+
+        # fine b1
+        SSxy = np.sum(self.Y * self.X) - n * mean_Y * mean_X
+        SSxx = np.sum(self.X * self.X) - n * mean_X * mean_X
+
+        self.b1 = SSxy / SSxx
+        self.b0 = mean_Y - self.b1 * mean_X
+
+        return self.b1, self.b0
+
+    def plot(self ):
+        plt.scatter(self.X, self.Y, color="b", marker="*", s=60)  # plotting a scatter plot
+        plt.title('Simple Linear Regression')  # adding a title to the graph
+        plt.xlabel('Independent Variable')  # adding axis labels
+        plt.ylabel('Dependent Variable')
+
+        y_pred = self.b0 + self.b1 * self.X  # predicting response variable values
+        plt.plot(self.X, y_pred, color="r")  # plotting the predicted line
+        plt.show()  # displaying the plot
+
+
+class Datset:
+    def __init__(self, file):
+        self.data = pd.read_csv(file)
+        self.data.describe()
+        self.train = []
+        self.test = []
+        self.feature = []
+        self.response = []
+        self.beta = []
+
+    def split(self, ratio):
+        # mix the data
+        ratio = (100 - ratio) / 100
+        self.train, self.test = train_test_split(self.data, test_size=ratio)#, random_state=42)
+        print('size of training', self.train.size, )
+        print('size of testing', self.test.size)
+
+    def converter(self, dt):
+        print(self.data.loc[0])
+        self.feature = dt[['RM', 'LSTAT', 'PTRATIO']]
+        self.response = dt[['MEDV']]
+        print(type(self.response))
+
+    def fun_training(self):
+        tem = self.feature
+        tem['one'] = 1  # add 1
+        X = pd.DataFrame(tem).to_numpy()
+        X_tra = np.transpose(X)
+        print('X:',X.shape,'\n XT ',X_tra.shape)
+        X_tra_X = np.dot(X_tra, X)
+        print('\nX_tra_X',X_tra_X.shape)
+        X_tra_X_inv = np.linalg.inv(X_tra_X)
+        print('\n X_tra_X_inv ',X_tra_X_inv.shape)
+
+        product = np.dot(X_tra_X_inv, X_tra)
+        print('\n product ', product.shape)
+        Y = pd.DataFrame(self.response).to_numpy()
+        print('\n Y ', Y.shape)
+
+        self.beta = np.dot(product, Y)
+        print('\n', 'Beta \n', self.beta)
+
+    def predict(self):
+        # training
+        tem = self.feature
+        tem['one'] = 1  # add 1
+        X = pd.DataFrame(tem).to_numpy()
+        predict_Y = np.dot(X, self.beta)
+
+        return X,predict_Y
+
+    def Y_value(self):
+        tem = self.response
+        return pd.DataFrame(tem).to_numpy()
+
+    def plot(self,xtrain,ptrain,etrain,xtest,ptest,etest):
+
+        y= etrain
+        x= ptrain
+        #print(y,'\n',x)
+        fig, (ax1, ax2) = plt.subplots(1, 2)
+        ax1.set_title('Actual vs predicted')
+        ax1.set(xlabel='Actual', ylabel='predicted')
+        ax2.set(xlabel='Actual', ylabel='Residual error')
+        ax2.set_title('Residual error')
+
+        ax1.scatter(x , y, color="r", marker=".", s=60 , label = 'traing')  # plotting the predicted line
+        ax2.scatter(x, y-x, color="r", marker=".", s=60, label='traing')
+
+        y = etest
+        x = ptest
+        #print(y, '\n', x)
+        ax1.scatter(x, y, color="b", marker=".", s=60 , label = 'testing' )  # plotting the predicted line
+        ax2.scatter(x, y-x, color="b", marker=".", s=60 , label = 'testing' )
+       # axs[1].title('Simple Linear Regression')  # adding a title to the graph
+       # axs[0].ylabel('actual value')  # adding axis labels
+       # axs[0].xlabel('predicted value')
+        ax1.legend(loc="upper left")
+        ax2.legend(loc="upper right")
+        plt.show()  # displaying the plot
+
+
+
+if __name__ == "__main__":
+    X = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    Y = [2, 5, 7, 8, 9, 11, 14, 15, 17, 19]
+    slr = Simple_linear_regression(X, Y)
+    print(slr.Least_square())
+    slr.plot()
+
+    ## Todo 01
+    # i. Import the ‘Boston Housing.csv’ data set
+    dataSet = Datset('Boston_Housing.csv')
+    print('Boston_Housing size=', dataSet.data.size)
+
+    # Split 80% of data as the training set and rest as the test set.
+    dataSet.split(80)
+
+    # Divide the data into feature matrix (x) and response vector (y).
+    # Features: RM, LSTAT, PTRATIO Response: MEDV.
+    dataSet.converter(dataSet.train)
+
+    # Use following expressions to estimate the parameter values:
+    dataSet.fun_training()
+
+    # predict the response value
+    # training values
+
+    traing_X, training_predict_Y = dataSet.predict()
+    training_expected_Y = dataSet.Y_value()
+
+    # testing value
+    dataSet.converter(dataSet.test)
+    # test predict
+    test_x, test_predict_y = dataSet.predict()
+    test_expected_y = dataSet.Y_value()
+
+
+    ## Visualize the residual errors for both train and test sets in one graph.
+    dataSet.plot(traing_X, training_predict_Y, training_expected_Y,test_x, test_predict_y, test_expected_y)
