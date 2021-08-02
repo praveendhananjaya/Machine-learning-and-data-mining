@@ -1,5 +1,7 @@
 import load as dp
-
+from balance.balance import UpSampling
 
 dataset = dp.Load()
-dataset.run()
+df = dataset.run()
+upSample = UpSampling(df)
+print(upSample.apply())
